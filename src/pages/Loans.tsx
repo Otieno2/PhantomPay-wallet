@@ -298,6 +298,7 @@ const Loans: React.FC = () => {
                       </>
                     )}
                   </button>
+            </div>
           )}
         </div>
       )}

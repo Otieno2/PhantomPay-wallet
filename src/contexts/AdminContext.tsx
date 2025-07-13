@@ -141,8 +141,8 @@ export const AdminProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         totalLoanValue: 0,
         overdueLoans: 0,
         totalExpenses: 0,
-        aiAssistantUsage: 0
 
+        aiAssistantUsage: 0,
         conversionRate: 0
       };
 
