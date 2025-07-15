@@ -18,6 +18,7 @@ import {
   PiggyBank,
   Brain,
   Target
+  Plus
 } from 'lucide-react';
 import { useWallet } from '../contexts/WalletContext';
 import { useAuth } from '../contexts/AuthContext';
@@ -30,6 +31,7 @@ const Dashboard: React.FC = () => {
   const recentTransactions = transactions.slice(0, 5);
 
   const quickActions = [
+    { name: 'Deposit', href: '/deposit', icon: Plus, color: 'from-green-500 to-green-600', description: 'Add funds' },
     { name: 'Transfer', href: '/transfer', icon: Send, color: 'from-blue-500 to-blue-600', description: 'Send money' },
     { name: 'Withdraw', href: '/withdraw', icon: Minus, color: 'from-red-500 to-red-600', description: 'Cash out' },
     { name: 'Loans', href: '/loans', icon: Target, color: 'from-green-500 to-green-600', description: 'Get loans' },

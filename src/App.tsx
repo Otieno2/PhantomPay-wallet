@@ -20,6 +20,7 @@ import Withdraw from './pages/Withdraw';
 import Loans from './pages/Loans';
 import Savings from './pages/Savings';
 import AIAssistant from './pages/AIAssistant';
+import Deposit from './pages/Deposit';
 
 function App() {
   return (
@@ -111,6 +112,13 @@ function App() {
                     <ProtectedRoute>
                       <Layout>
                         <Withdraw />
+                      </Layout>
+                    </ProtectedRoute>
+                  } />
+                  <Route path="/deposit" element={
+                    <ProtectedRoute>
+                      <Layout>
+                        <Deposit />
                       </Layout>
                     </ProtectedRoute>
                   } />
