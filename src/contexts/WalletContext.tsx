@@ -14,6 +14,9 @@ interface WalletContextType {
   createSavingsAccount: (account: Omit<SavingsAccount, 'id' | 'createdAt' | 'status'>) => Promise<void>;
   updateSavingsAccount: (id: string, updates: Partial<SavingsAccount>) => Promise<void>;
   refreshWalletData: () => Promise<void>;
+  depositMoney: (amount: number, method: string) => Promise<void>;
+  withdrawMoney: (amount: number, method: string) => Promise<void>;
+  updateUserPremiumStatus: (premiumData: { premiumStatus: boolean; premiumPlan?: string; premiumExpiry?: Date }) => Promise<void>;
 }
 
 const WalletContext = createContext<WalletContextType | undefined>(undefined);
@@ -179,6 +182,99 @@ export const WalletProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     await loadUserData();
   };
 
+  const depositMoney = async (amount: number, method: string) => {
+    if (!currentUser) throw new Error('User not authenticated');
+    
+    try {
+      setLoading(true);
+      
+      // Simulate processing delay
+      await new Promise(resolve => setTimeout(resolve, 1500));
+      
+      // Update user balance
+      const newBalance = balance + amount;
+      await updateUserBalance(newBalance);
+      
+      // Add transaction record
+      await addTransaction({
+        uid: currentUser.uid,
+        type: 'deposit',
+        amount,
+        description: `Deposit via ${method}`,
+        status: 'completed',
+        direction: '+',
+        method
+      });
+      
+    } catch (error) {
+      console.error('Error depositing money:', error);
+      throw error;
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const withdrawMoney = async (amount: number, method: string) => {
+    if (!currentUser) throw new Error('User not authenticated');
+    
+    try {
+      setLoading(true);
+      
+      // Check sufficient balance
+      if (amount > balance) {
+        throw new Error('Insufficient balance');
+      }
+      
+      // Simulate processing delay
+      await new Promise(resolve => setTimeout(resolve, 1500));
+      
+      // Update user balance
+      const newBalance = balance - amount;
+      await updateUserBalance(newBalance);
+      
+      // Add transaction record
+      await addTransaction({
+        uid: currentUser.uid,
+        type: 'withdrawal',
+        amount,
+        description: `Withdrawal via ${method}`,
+        status: 'completed',
+        direction: '-',
+        method
+      });
+      
+    } catch (error) {
+      console.error('Error withdrawing money:', error);
+      throw error;
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const updateUserPremiumStatus = async (premiumData: { premiumStatus: boolean; premiumPlan?: string; premiumExpiry?: Date }) => {
+    if (!currentUser || !user) throw new Error('User not authenticated');
+    
+    try {
+      setLoading(true);
+      
+      // Update user object with premium data
+      const updatedUser = {
+        ...user,
+        premiumStatus: premiumData.premiumStatus,
+        ...(premiumData.premiumPlan && { premiumPlan: premiumData.premiumPlan }),
+        ...(premiumData.premiumExpiry && { premiumExpiry: premiumData.premiumExpiry })
+      };
+      
+      setUser(updatedUser);
+      localStorage.setItem(`user_${currentUser.uid}`, JSON.stringify(updatedUser));
+      
+    } catch (error) {
+      console.error('Error updating premium status:', error);
+      throw error;
+    } finally {
+      setLoading(false);
+    }
+  };
   const value = {
     user,
     balance,
@@ -189,7 +285,10 @@ export const WalletProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     addTransaction,
     createSavingsAccount,
     updateSavingsAccount,
-    refreshWalletData
+    refreshWalletData,
+    depositMoney,
+    withdrawMoney,
+    updateUserPremiumStatus
   };
 
   return (

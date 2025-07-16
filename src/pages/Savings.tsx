@@ -54,13 +54,13 @@ const Savings: React.FC = () => {
 
   const onSubmit = async (data: SavingsForm) => {
     try {
-      const selectedOption = SAVINGS_OPTIONS.find(option => option.months === data.lockPeriod);
+      const selectedOption = SAVINGS_OPTIONS.find(option => option.months === Number(data.lockPeriod));
       if (!selectedOption) {
         toast.error('Invalid lock period selected');
         return;
       }
 
-      await createSavingsAccount(data.amount, data.lockPeriod, selectedOption.annualRate);
+      await createSavingsAccount(data.amount, Number(data.lockPeriod), selectedOption.annualRate);
       toast.success('Savings account created successfully! 🎉');
       reset();
       setShowCreateForm(false);
