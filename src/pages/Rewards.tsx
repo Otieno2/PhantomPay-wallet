@@ -3,7 +3,8 @@ import { Gift, Star, TrendingUp, Award, Calendar, Zap } from 'lucide-react';
 import { useWallet } from '../contexts/WalletContext';
 
 const Rewards: React.FC = () => {
-  const { rewardPoints, balance, addRewardPoints } = useWallet();
+  const { user, balance, addRewardPoints } = useWallet();
+  const rewardPoints = user?.rewardPoints || 0;
 
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('en-KE', {
