@@ -1,9 +1,10 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Navigate } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { Eye, EyeOff, Wallet, Mail, Lock } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
-import toast from 'react-hot-toast';
+import toast from 'react-hot-toast'; // Import toast
+import { auth, sendSignInLinkToEmail, isSignInWithEmailLink, signInWithEmailLink } from '../config/firebase';
 
 interface LoginForm {
   email: string;
@@ -13,6 +14,7 @@ interface LoginForm {
 const LoginPage: React.FC = () => {
   const [isLogin, setIsLogin] = useState(true);
   const [showPassword, setShowPassword] = useState(false);
+  const [emailForLinkSignIn, setEmailForLinkSignIn] = useState('');
   const [loading, setLoading] = useState(false);
   const { currentUser, login, register, loginWithGoogle } = useAuth();
   
@@ -50,6 +52,60 @@ const LoginPage: React.FC = () => {
       setLoading(false);
     }
   };
+
+  const handleSendEmailLink = async () => {
+    if (!emailForLinkSignIn) {
+      toast.error('Please enter your email address.');
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const actionCodeSettings = {
+        url: 'https://phantompay-8759f.web.app', // Your Firebase Hosting domain
+        handleCodeInApp: true,
+      };
+
+      await sendSignInLinkToEmail(auth, emailForLinkSignIn, actionCodeSettings);
+      window.localStorage.setItem('emailForSignIn', emailForLinkSignIn);
+      toast.success('Authentication link sent to your email! Please check your inbox.');
+    } catch (error: any) {
+      console.error('Error sending email link:', error);
+      toast.error(error.message || 'Failed to send authentication link.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    const completeSignIn = async () => {
+      if (isSignInWithEmailLink(auth, window.location.href)) {
+        let email = window.localStorage.getItem('emailForSignIn');
+        if (!email) {
+          email = window.prompt('Please provide your email for confirmation');
+        }
+
+        if (!email) {
+          toast.error('Email is required to complete sign-in.');
+          return;
+        }
+
+        setLoading(true);
+        try {
+          await signInWithEmailLink(auth, email, window.location.href);
+          window.localStorage.removeItem('emailForSignIn');
+          toast.success('Successfully signed in with email link!');
+          // The onAuthStateChanged listener in AuthContext should handle navigation
+        } catch (error: any) {
+          console.error('Error completing sign-in with email link:', error);
+          toast.error(error.message || 'Failed to complete sign-in with email link.');
+        } finally {
+          setLoading(false);
+        }
+      }
+    };
+    completeSignIn();
+  }, []);
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-purple-900 via-indigo-900 to-blue-900 py-12 px-4 sm:px-6 lg:px-8">
@@ -183,6 +239,46 @@ const LoginPage: React.FC = () => {
                   <path fill="currentColor" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
                 </svg>
                 Sign in with Google
+              </button>
+            </div>
+          </div>
+
+          {/* Email Link Sign-in */}
+          <div className="mt-6">
+            <div className="relative">
+              <div className="absolute inset-0 flex items-center">
+                <div className="w-full border-t border-gray-300" />
+              </div>
+              <div className="relative flex justify-center text-sm">
+                <span className="px-2 bg-white text-gray-500">Or sign in with email link</span>
+              </div>
+            </div>
+
+            <div className="mt-6 space-y-4">
+              <div>
+                <label htmlFor="emailForLink" className="block text-sm font-medium text-gray-700 mb-2">
+                  Email Address
+                </label>
+                <div className="relative">
+                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                    <Mail className="h-5 w-5 text-gray-400" />
+                  </div>
+                  <input
+                    id="emailForLink"
+                    type="email"
+                    value={emailForLinkSignIn}
+                    onChange={(e) => setEmailForLinkSignIn(e.target.value)}
+                    className="block w-full pl-10 pr-3 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-600 focus:border-transparent transition-colors"
+                    placeholder="Enter your email"
+                  />
+                </div>
+              </div>
+              <button
+                onClick={handleSendEmailLink}
+                disabled={loading}
+                className="w-full flex justify-center py-3 px-4 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200"
+              >
+                {loading ? 'Sending Link...' : 'Send Sign-in Link'}
               </button>
             </div>
           </div>
