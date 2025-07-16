@@ -17,7 +17,7 @@ import {
   Zap,
   PiggyBank,
   Brain,
-  Target
+  Target,
   Plus
 } from 'lucide-react';
 import { useWallet } from '../contexts/WalletContext';
