@@ -4,7 +4,8 @@ import { useForm } from 'react-hook-form';
 import { Eye, EyeOff, Wallet, Mail, Lock } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import toast from 'react-hot-toast'; // Import toast
-import { auth, sendSignInLinkToEmail, isSignInWithEmailLink, signInWithEmailLink } from '../config/firebase';
+import { sendSignInLinkToEmail, isSignInWithEmailLink, signInWithEmailLink } from '../config/firebase';
+import { getAuth } from 'firebase/auth';
 
 interface LoginForm {
   email: string;
@@ -61,14 +62,16 @@ const LoginPage: React.FC = () => {
 
     setLoading(true);
     try {
+      const auth = getAuth();
       const actionCodeSettings = {
-        url: 'https://phantompay-8759f.web.app', // Your Firebase Hosting domain
+        url: 'https://phantompay-8759f.web.app',
         handleCodeInApp: true,
       };
 
       await sendSignInLinkToEmail(auth, emailForLinkSignIn, actionCodeSettings);
       window.localStorage.setItem('emailForSignIn', emailForLinkSignIn);
       toast.success('Authentication link sent to your email! Please check your inbox.');
+      setEmailForLinkSignIn(''); // Clear the input after sending
     } catch (error: any) {
       console.error('Error sending email link:', error);
       toast.error(error.message || 'Failed to send authentication link.');
@@ -79,10 +82,13 @@ const LoginPage: React.FC = () => {
 
   useEffect(() => {
     const completeSignIn = async () => {
+      const auth = getAuth();
       if (isSignInWithEmailLink(auth, window.location.href)) {
         let email = window.localStorage.getItem('emailForSignIn');
         if (!email) {
-          email = window.prompt('Please provide your email for confirmation');
+          // User opened the link on a different device. To prevent session fixation
+          // attacks, ask the user to provide the associated email again.
+          email = window.prompt('Please provide your email for confirmation:');
         }
 
         if (!email) {
@@ -92,18 +98,22 @@ const LoginPage: React.FC = () => {
 
         setLoading(true);
         try {
-          await signInWithEmailLink(auth, email, window.location.href);
+          const result = await signInWithEmailLink(auth, email, window.location.href);
+          // Clear email from storage.
           window.localStorage.removeItem('emailForSignIn');
           toast.success('Successfully signed in with email link!');
-          // The onAuthStateChanged listener in AuthContext should handle navigation
+          
+          // Clear the URL to remove the email link parameters
+          window.history.replaceState({}, document.title, window.location.pathname);
         } catch (error: any) {
           console.error('Error completing sign-in with email link:', error);
-          toast.error(error.message || 'Failed to complete sign-in with email link.');
+          toast.error(error.message || 'Failed to complete sign-in. Please try again or request a new link.');
         } finally {
           setLoading(false);
         }
       }
     };
+    
     completeSignIn();
   }, []);
 
